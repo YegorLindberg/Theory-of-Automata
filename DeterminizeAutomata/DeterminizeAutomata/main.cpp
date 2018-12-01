@@ -86,7 +86,6 @@ ExtendedStateTable definesAllTransitions(ExtendedStateTable& fullTableOfTransiti
     set<int> listOfStates;
     set<int> mergeStates;
     while (!queueStates.empty()) {
-        cout << "queue not empty.\n";
         visitState = queueStates.front();
         queueStates.pop();
         for (int column = 0; column < inputSignalsCount; column++) {
@@ -101,7 +100,7 @@ ExtendedStateTable definesAllTransitions(ExtendedStateTable& fullTableOfTransiti
             }
             fullTableOfTransitions[column].push_back(make_pair(visitState, listOfStates));
             visited.insert(visitState);
-            if ((visited.find(listOfStates) != visited.end()) && (listOfStates.find(NO_TRANSITIONS) != listOfStates.end())) {
+            if ((visited.find(listOfStates) != visited.end()) && (listOfStates.find(NO_TRANSITIONS) != listOfStates.end()) && (repeatsCheckerForQueue.find(listOfStates) == repeatsCheckerForQueue.end())) {
                 queueStates.push(listOfStates);
                 repeatsCheckerForQueue.insert(listOfStates);
             }
@@ -154,6 +153,7 @@ void makeDeterminization(istream& inputFile, ostream& outputFile) {
     cout << "-----------\n";
     ExtendedStateTable fullTableOfTransitions = determineOriginalTable(originalTable, queueStates, visited);
     printingExtendedTable(fullTableOfTransitions);
+    
 }
 
 
