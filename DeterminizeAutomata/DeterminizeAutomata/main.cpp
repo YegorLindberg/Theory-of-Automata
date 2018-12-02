@@ -150,10 +150,7 @@ int getIndex(ExtendedStateTable& fullTable, set<int> toFind) {
     return 0;
 }
 
-void printOutput(ostream& outputFile, ExtendedStateTable& endTable, vector<set<int>> newFinalStates, int inputSignalCount) {
-    outputFile << inputSignalCount << endl;
-    outputFile << endTable[0].size() << endl;
-    outputFile << newFinalStates.size() << endl;
+void printFinalStates(ostream& outputFile, vector<set<int>>& newFinalStates) {
     for (int fstate = 0; fstate < newFinalStates.size(); fstate++) {
         for (auto iter = newFinalStates[fstate].begin(); iter != newFinalStates[fstate].end(); iter++) {
             outputFile << *iter;
@@ -161,6 +158,13 @@ void printOutput(ostream& outputFile, ExtendedStateTable& endTable, vector<set<i
         outputFile << " ";
     }
     outputFile << endl;
+}
+
+void printOutput(ostream& outputFile, ExtendedStateTable& endTable, vector<set<int>>& newFinalStates, int inputSignalCount) {
+    outputFile << inputSignalCount << endl;
+    outputFile << endTable[0].size() << endl;
+    outputFile << newFinalStates.size() << endl;
+    printFinalStates(outputFile, newFinalStates);
     for (int column = 0; column < endTable.size(); column++) {
         for (int row = 0; row < endTable[0].size(); row++) {
             for (auto iter = endTable[column][row].second.begin(); iter != endTable[column][row].second.end(); iter++) {
@@ -171,6 +175,31 @@ void printOutput(ostream& outputFile, ExtendedStateTable& endTable, vector<set<i
         outputFile << endl;
     }
     outputFile << endl;
+}
+
+void printTableInDotFile(ExtendedStateTable& endTable, vector<set<int>>& newFinalStates, string fileName) {
+    ofstream ofs(fileName);
+    
+    stringstream stream;
+    printFinalStates(stream, newFinalStates);
+    ofs << "digraph G {" << endl;
+    ofs << "node [shape = doublecircle]; " << stream.str() << ";" << endl;
+    ofs << "node [shape = circle];" << endl;
+    
+    for (int column = 0; column < endTable.size(); column++) {
+        for (int row = 0; row < endTable[0].size(); row++) {
+            if (*endTable[column][row].second.begin() == -1) { continue; }
+            for (auto iter = endTable[column][row].first.begin(); iter != endTable[column][row].first.end(); iter++) {
+                ofs << *iter;
+            }
+            ofs << " -> ";
+            for (auto iter = endTable[column][row].second.begin(); iter != endTable[column][row].second.end(); iter++) {
+                ofs << *iter;
+            }
+            ofs << " [ label = \"" << column << "\" ];" << endl;
+        }
+    }
+    ofs << "}" << endl;
 }
 
 ExtendedStateTable deleteUnnecessaryStates(ExtendedStateTable& fullTable, vector<int>& finalStates, vector<set<int>>& newFinalStates) {
@@ -204,7 +233,7 @@ ExtendedStateTable deleteUnnecessaryStates(ExtendedStateTable& fullTable, vector
     return transitionsTable;
 }
 
-void makeDeterminization(istream& inputFile, ostream& outputFile) {
+void makeDeterminization(istream& inputFile, ostream& outputFile, string dotFileName) {
     int inputSignalCount = 0; // число входных сигналов
     int stateCount = 0; // число состояний
     int finalStateCount = 0; // число финальных состояний
@@ -223,12 +252,13 @@ void makeDeterminization(istream& inputFile, ostream& outputFile) {
     ExtendedStateTable endTable = deleteUnnecessaryStates(fullTableOfTransitions, finalStates, newFinalStates);
     print(endTable);
     printOutput(outputFile, endTable, newFinalStates, inputSignalCount);
+    printTableInDotFile(endTable, newFinalStates, dotFileName);
 }
 
 
 int main() {
     
-    ifstream inputFile("input2.txt");
+    ifstream inputFile("7/in.txt");
     ofstream outputFile("output.txt");
     
     if ((!inputFile.is_open()) || (!outputFile.is_open())) {
@@ -236,7 +266,7 @@ int main() {
         return 1;
     }
     
-    makeDeterminization(inputFile, outputFile);
+    makeDeterminization(inputFile, outputFile, "vizualizatioin.dot");
     
     inputFile.close();
     outputFile.close();
