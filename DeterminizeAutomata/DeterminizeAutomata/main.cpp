@@ -18,12 +18,10 @@ using StateTable = vector<vector<set<int>>>;
 using ExtendedStateTable = vector<vector<pair<set<int>, set<int>>>>;
 static const int NO_TRANSITIONS = -1;
 
-vector<set<int>> readFinalStates(istream& inputFile, int finalStateCount) {
-    vector<set<int>> finalStates(finalStateCount);
-    int val = 0;
+vector<int> readFinalStates(istream& inputFile, int finalStateCount) {
+    vector<int> finalStates(finalStateCount);
     for (size_t i = 0; i < finalStateCount; i++) {
-        inputFile >> val;
-        finalStates[i].insert(val);
+        inputFile >> finalStates[i];
     }
     { //переводим каретку на новую строку
         string extra = "";
@@ -90,7 +88,6 @@ ExtendedStateTable defineAllTransitions(ExtendedStateTable& fullTableOfTransitio
     set<int> mergeStates;
     while (!queueStates.empty()) {
         visitState = queueStates.front();
-        cout << *visitState.begin() << " - visit state begin\n";
         queueStates.pop();
         for (int column = 0; column < inputSignalsCount; column++) {
             for (auto element = visitState.begin(); element != visitState.end(); element++) {
@@ -153,7 +150,30 @@ int getIndex(ExtendedStateTable& fullTable, set<int> toFind) {
     return 0;
 }
 
-ExtendedStateTable deleteUnnecessaryStates(ExtendedStateTable& fullTable) {
+void printOutput(ostream& outputFile, ExtendedStateTable& endTable, vector<set<int>> newFinalStates, int inputSignalCount) {
+    outputFile << inputSignalCount << endl;
+    outputFile << endTable[0].size() << endl;
+    outputFile << newFinalStates.size() << endl;
+    for (int fstate = 0; fstate < newFinalStates.size(); fstate++) {
+        for (auto iter = newFinalStates[fstate].begin(); iter != newFinalStates[fstate].end(); iter++) {
+            outputFile << *iter;
+        }
+        outputFile << " ";
+    }
+    outputFile << endl;
+    for (int column = 0; column < endTable.size(); column++) {
+        for (int row = 0; row < endTable[0].size(); row++) {
+            for (auto iter = endTable[column][row].second.begin(); iter != endTable[column][row].second.end(); iter++) {
+                outputFile << *iter;
+            }
+            outputFile << " ";
+        }
+        outputFile << endl;
+    }
+    outputFile << endl;
+}
+
+ExtendedStateTable deleteUnnecessaryStates(ExtendedStateTable& fullTable, vector<int>& finalStates, vector<set<int>>& newFinalStates) {
     size_t countColumn = fullTable.size();
     ExtendedStateTable transitionsTable(countColumn);
     queue<set<int>> queueStates;
@@ -165,11 +185,15 @@ ExtendedStateTable deleteUnnecessaryStates(ExtendedStateTable& fullTable) {
         currentState = queueStates.front();
         queueStates.pop();
         int index = getIndex(fullTable, currentState);
-//        cout << index << " - index\n";
         for (int column = 0; column < countColumn; column++) {
             transitionsTable[column].push_back(fullTable[column][index]);
+            for (int i = 0; i < finalStates.size(); i++) {
+                if ((fullTable[column][index].second.find(finalStates[i]) != fullTable[column][index].second.end()) && (passed.find(fullTable[column][index].second) == passed.end())) {
+                    newFinalStates.push_back(fullTable[column][index].second);
+                    break;
+                }
+            }
             if ((passed.find(fullTable[column][index].second) == passed.end()) && (*fullTable[column][index].second.begin() != NO_TRANSITIONS)) {
-//                cout << *fullTable[column][index].second.begin() << " - begin of sec in table\n";
                 queueStates.push(fullTable[column][index].second);
                 passed.insert(fullTable[column][index].second);
             }
@@ -189,20 +213,22 @@ void makeDeterminization(istream& inputFile, ostream& outputFile) {
     queue<set<int>> queueStates;
     set<set<int>> visited;
     
-    vector<set<int>> finalStates = readFinalStates(inputFile, finalStateCount);
+    vector<int> finalStates = readFinalStates(inputFile, finalStateCount);
     StateTable originalTable = readOriginalTable(inputFile, stateCount, inputSignalCount);
     print(originalTable);
     cout << "-----------\n";
     ExtendedStateTable fullTableOfTransitions = determineOriginalTable(originalTable, queueStates, visited);
     print(fullTableOfTransitions);
-    ExtendedStateTable endTable = deleteUnnecessaryStates(fullTableOfTransitions);
+    vector<set<int>> newFinalStates;
+    ExtendedStateTable endTable = deleteUnnecessaryStates(fullTableOfTransitions, finalStates, newFinalStates);
     print(endTable);
+    printOutput(outputFile, endTable, newFinalStates, inputSignalCount);
 }
 
 
 int main() {
     
-    ifstream inputFile("input.txt");
+    ifstream inputFile("input2.txt");
     ofstream outputFile("output.txt");
     
     if ((!inputFile.is_open()) || (!outputFile.is_open())) {
