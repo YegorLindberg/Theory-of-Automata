@@ -71,9 +71,12 @@ void print(ExtendedStateTable& extendedTabel) {
     cout << extendedTabel[0].size() << " - extendedTabel[0].size();\n" << extendedTabel.size() << " - extendedTabel.size();\n";
     for (size_t row = 0; row < extendedTabel[0].size(); row++) {
         for (size_t column = 0; column < extendedTabel.size(); column++) {
-            for (auto element = extendedTabel[column][row].second.begin(); element != extendedTabel[column][row].second.end(); element++) {
-//                cout << *extendedTabel[column][row].first.begin() << " ";
-                cout << *element << "";
+            for (auto firstElement = extendedTabel[column][row].first.begin(); firstElement != extendedTabel[column][row].first.end(); firstElement++) {
+                cout << *firstElement << "";
+            }
+            cout << " ";
+            for (auto secElement = extendedTabel[column][row].second.begin(); secElement != extendedTabel[column][row].second.end(); secElement++) {
+                cout << *secElement << "";
             }
             cout << " ";
         }
@@ -101,7 +104,7 @@ ExtendedStateTable defineAllTransitions(ExtendedStateTable& fullTableOfTransitio
             }
             fullTableOfTransitions[column].push_back(make_pair(visitState, listOfStates));
             visited.insert(visitState);
-            if ((visited.find(listOfStates) != visited.end()) && (listOfStates.find(NO_TRANSITIONS) != listOfStates.end()) && (repeatsCheckerForQueue.find(listOfStates) == repeatsCheckerForQueue.end())) {
+            if ((visited.find(listOfStates) == visited.end()) && (listOfStates.find(NO_TRANSITIONS) == listOfStates.end()) && (repeatsCheckerForQueue.find(listOfStates) == repeatsCheckerForQueue.end())) {
                 queueStates.push(listOfStates);
                 repeatsCheckerForQueue.insert(listOfStates);
             }
@@ -112,7 +115,6 @@ ExtendedStateTable defineAllTransitions(ExtendedStateTable& fullTableOfTransitio
 }
 
 ExtendedStateTable determineOriginalTable(StateTable& origTable, queue<set<int>>& queueStates, set<set<int>>& visited) {
-//    cout << origTable[0].size() << " - origTable[0].size();\n" << origTable.size() << " - origTable.size();\n";
     size_t tableRows = origTable[0].size();
     size_t tableColumns = origTable.size();
     ExtendedStateTable tableOfTransitions(tableColumns, vector<pair<set<int>, set<int>>>(tableRows));
@@ -208,8 +210,10 @@ ExtendedStateTable deleteUnnecessaryStates(ExtendedStateTable& fullTable, vector
     queue<set<int>> queueStates;
     set<set<int>> passed;
     set<int> currentState;
-    queueStates.push({0});
-    passed.insert({0});
+    currentState.insert(0);
+    queueStates.push(currentState);
+    passed.insert(currentState);
+    currentState.clear();
     while (!queueStates.empty()) {
         currentState = queueStates.front();
         queueStates.pop();
