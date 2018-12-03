@@ -179,11 +179,23 @@ void printOutput(ostream& outputFile, ExtendedStateTable& endTable, vector<set<i
     outputFile << endl;
 }
 
+void printFinalStatesToDot(ostream& ofs, vector<set<int>>& newFinalStates) {
+    for (int fstate = 0; fstate < newFinalStates.size(); fstate++) {
+        ofs << "S_";
+        for (auto iter = newFinalStates[fstate].begin(); iter != newFinalStates[fstate].end(); iter++) {
+            ofs << *iter;
+            auto checkEnd = iter;
+            if (++checkEnd != newFinalStates[fstate].end()) { ofs << "_"; }
+        }
+        ofs << " ";
+    }
+}
+
 void printTableInDotFile(ExtendedStateTable& endTable, vector<set<int>>& newFinalStates, string fileName) {
     ofstream ofs(fileName);
     
     stringstream stream;
-    printFinalStates(stream, newFinalStates);
+    printFinalStatesToDot(stream, newFinalStates);
     ofs << "digraph G {" << endl;
     ofs << "node [shape = doublecircle]; " << stream.str() << ";" << endl;
     ofs << "node [shape = circle];" << endl;
@@ -191,12 +203,21 @@ void printTableInDotFile(ExtendedStateTable& endTable, vector<set<int>>& newFina
     for (int column = 0; column < endTable.size(); column++) {
         for (int row = 0; row < endTable[0].size(); row++) {
             if (*endTable[column][row].second.begin() == -1) { continue; }
+            ofs << "S_";
             for (auto iter = endTable[column][row].first.begin(); iter != endTable[column][row].first.end(); iter++) {
                 ofs << *iter;
+                auto checkEnd = iter;
+                if (++checkEnd != endTable[column][row].first.end()) {
+                    ofs << "_";
+                }
             }
-            ofs << " -> ";
+            ofs << " -> " << "S_";
             for (auto iter = endTable[column][row].second.begin(); iter != endTable[column][row].second.end(); iter++) {
                 ofs << *iter;
+                auto checkEnd = iter;
+                if (++checkEnd != endTable[column][row].second.end()) {
+                    ofs << "_";
+                }
             }
             ofs << " [ label = \"" << column << "\" ];" << endl;
         }
@@ -233,7 +254,6 @@ ExtendedStateTable deleteUnnecessaryStates(ExtendedStateTable& fullTable, vector
         }
         currentState.clear();
     }
-    
     return transitionsTable;
 }
 
@@ -261,8 +281,7 @@ void makeDeterminization(istream& inputFile, ostream& outputFile, string dotFile
 
 
 int main() {
-    
-    ifstream inputFile("7/in.txt");
+    ifstream inputFile("6/in.txt");
     ofstream outputFile("output.txt");
     
     if ((!inputFile.is_open()) || (!outputFile.is_open())) {
@@ -274,6 +293,5 @@ int main() {
     
     inputFile.close();
     outputFile.close();
-    
     return 0;
 }
